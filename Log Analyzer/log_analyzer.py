@@ -76,7 +76,8 @@ def parse_config_args():
 
 def parse_logs(log_path, log_pattern, file_config):
     """
-    This function finds nginx logs with the extension gz or plain and template
+    This function function gets a list of the last LOGS_COUNT sorted log files by date in their name with the extension
+    gz or plain and the template
     :arg:
         log_path(str): Directory of log
         log_pattern(str): Pattern of template name
@@ -85,7 +86,10 @@ def parse_logs(log_path, log_pattern, file_config):
     """
     log_files = Path(log_path).glob(log_pattern)
     try:
-        log_files = [file for file in list(log_files) if str(file).endswith('gz') or str(file).endswith('plain')][
+        # Getting sorted by date in file name ext with gz or plain list type of WindowsPath
+        log_files = [Path(str(sorted_file)) for sorted_file in
+                     sorted([str(file) for file in log_files if str(file).endswith('gz') or str(file).endswith('plain')],
+                            key=lambda el: DATE_PATTERN.match(str(el)).group(0), reverse=True)][
                     :int(file_config['LOGS_COUNT'])]
 
         return log_files
