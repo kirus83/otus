@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import glob
 import gzip
 import json
 import logging
@@ -20,9 +19,9 @@ from pathlib import Path
 #                     '$request_time';
 
 DEFAULT_CONFIG = {
-    "REPORT_SIZE": 1000,
-    "REPORT_DIR": "./reports",
-    "LOG_DIR": "./log"
+    'REPORT_SIZE': 1000,
+    'REPORT_DIR': './reports',
+    'LOG_DIR': './log'
 }
 # Regular expression for parsing date in nginx log name
 DATE_PATTERN = re.compile(r'.*(?P<Y>\d{4})(?P<m>\d{2})(?P<d>\d{2})')
@@ -33,13 +32,14 @@ ROW_PATTERN = re.compile(
     r'"(?P<http_referer>.+)"\s+"(?P<http_user_agent>.+)"\s+"(?P<http_x_forwarded_for>.+)"\s+'
     r'"(?P<http_X_REQUEST_ID>.+)"\s+"(?P<http_X_RB_USER>.+)"\s+(?P<request_time>.+)'
 )
+
+
 LOGGER = None
 
 
-def init_logger(config_path):
+def init_logger(config_path: 'Directory of config file'):
     """
     This function initiates logging parameters
-    :arg: config_path(str): Directory of config file
     """
     logging.config.fileConfig(config_path)
     global LOGGER
@@ -74,34 +74,29 @@ def parse_config_args():
     return file_config
 
 
-def parse_logs(log_path, log_pattern, file_config):
+def parse_logs(log_path: 'Directory of log',
+               log_pattern: 'Pattern of template name',
+               file_config: 'Dict of config parameters'):
     """
-    This function function gets a list of the last LOGS_COUNT sorted log files by date in their name with the extension
-    gz or plain and the template
-    :arg:
-        log_path(str): Directory of log
-        log_pattern(str): Pattern of template name
-        file_config(dict): Dict of config parameters
+    This function function gets a list of the last LOGS_COUNT sorted log files
+    by date in their name with the extension gz or plain and the template
     :return: log_files(list): List of files.
     """
     log_files = Path(log_path).glob(log_pattern)
     try:
         # Getting sorted by date in file name ext with gz or plain list type of WindowsPath
-        log_files = [Path(str(sorted_file)) for sorted_file in
-                     sorted([str(file) for file in log_files if str(file).endswith('gz') or str(file).endswith('plain')],
-                            key=lambda el: DATE_PATTERN.match(str(el)).group(0), reverse=True)][
-                    :int(file_config['LOGS_COUNT'])]
-
+        log_files = [sorted_file for sorted_file in
+                     sorted((file for file in log_files if file.suffix == '.gz' or file.suffix == '.plain'),
+                            key=lambda el: el.stem.split('.')[-1], reverse=True)][:int(file_config['LOGS_COUNT'])]
         return log_files
     except ValueError:
         LOGGER.error('Getting nginx log files in {} is failed!'.format(log_path))
-        return
+        return []
 
 
-def parse_log(file):
+def parse_log(file: 'name of file'):
     """
     This function parsing nginx log file
-    :arg: file(str): name of file
     :return:
         urls_list(list): list of urls.
         sum_requests(int): sum of requests
@@ -110,24 +105,23 @@ def parse_log(file):
     urls_list = {}
     sum_requests = 0
     sum_requests_time = 0
-    l_rows = read_log(file)
+    log_rows = read_log(file)
     try:
-        l_row = next(l_rows)
-        while l_row:
-            data = re.search(ROW_PATTERN, l_row)
+        log_row = next(log_rows)
+        while log_row:
+            data = re.search(ROW_PATTERN, log_row)
             calculate_url_statistics(urls_list, data.groupdict(0))
             sum_requests += 1
-            sum_requests_time += float(data.groupdict(0)['request_time']) or float(0)
-            l_row = next(l_rows)
+            sum_requests_time += float(data.groupdict(0)['request_time']) or .0
+            log_row = next(log_rows)
     except:
-        l_row = None
+        log_row = None
     return urls_list, sum_requests, sum_requests_time
 
 
-def read_log(file_name):
+def read_log(file_name: 'Name of file with directory'):
     """
     This generator function opening and read file
-    :arg: file_name(str): Name of file with directory
     :return: row: row of file
     """
     if file_name.endswith('gz'):
@@ -139,14 +133,14 @@ def read_log(file_name):
     log.close()
 
 
-def calculate_url_statistics(urls_list, log_line):
+def calculate_url_statistics(urls_list: 'list of urls',
+                             log_line: 'dict of log row'):
     """
     This function calculating statistics for each unique url
-    :arg: urls_list(list): list of urls
     :return:
     """
     url = log_line['request']
-    rt = float(log_line['request_time']) or float(0)
+    rt = float(log_line['request_time']) or 0.
     if url not in urls_list:
         urls_list[url] = {}
         urls_list[url]['url'] = url
@@ -163,14 +157,12 @@ def calculate_url_statistics(urls_list, log_line):
         urls_list[url]['time_sum'] = round(urls_list[url]['time_sum'] + rt, 3)
 
 
-def enrich_url_statistics(urls_list, sum_req, sum_req_time):
+def enrich_url_statistics(urls_list: 'list of urls',
+                          sum_req: 'sum of requests',
+                          sum_req_time: 'sum of requests time'):
     """
     This function enriching statistics for each unique url
-    :arg:
-        urls_list(list): list of urls
-        sum_req(float): sum of requests
-        sum_req_time(float): sum of requests time
-    :return: json
+    :return: urls_list(list): list of urls with statistics
     """
     for el in urls_list:
         try:
@@ -182,25 +174,22 @@ def enrich_url_statistics(urls_list, sum_req, sum_req_time):
             LOGGER.error(
                 'This columns is absent in the log: time_sum,med and count!'
             )
-    return json.dumps(urls_list)
+    return urls_list
 
 
-def create_report(report, report_path):
+def create_report(report: 'report body', report_path: 'report directory'):
     """
     This function create report
-    :arg:
-        report(str): report body
-        report_path(windowspath): report directory
     :return:
     """
     try:
-        with open('./report.html', 'r', encoding='utf-8') as f:
+        with open('./templates/report.html', 'r', encoding='utf-8') as f:
             template = f.read()
     except:
         LOGGER.error('Error while opening report.html')
         return
 
-    template = template.replace('$table_json', report)
+    template = template.replace('$table_json', json.dumps(report))
     try:
         with open(report_path, 'w', encoding='utf-8') as f:
             f.write(template)
@@ -209,17 +198,16 @@ def create_report(report, report_path):
         return
 
 
-def main(file_config):
+def main(file_config: 'dict of configuration parameters'):
     """
     This function processes logs
-    :arg: file_config(dict): dict of configuration parameters
     :return:
     """
     # Initiating configuration parameters
     logs_dir = file_config['LOG_DIR']
     report_template = 'report-{Y}.{m}.{d}.html'
     log_template = 'nginx-access-ui*'
-    reports_dir = file_config['REPORT_DIR']
+    reports_dir = Path(file_config['REPORT_DIR'])
     report_size = file_config['REPORT_SIZE']
     # Get last log file
     files = parse_logs(logs_dir, log_template, file_config)
@@ -228,8 +216,7 @@ def main(file_config):
         for file in files:
             # Set report name and dir
             report_name = report_template.format(**DATE_PATTERN.search(file.name).groupdict())
-            report_path = os.path.join(reports_dir, report_name)
-            report_path = Path(report_path)
+            report_path = reports_dir / report_name
             report_path.parent.mkdir(exist_ok=True, parents=True)
             # If report already exists then exit with msg
             if Path(report_path).exists():
