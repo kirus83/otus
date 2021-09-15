@@ -94,7 +94,7 @@ def parse_logs(log_path, log_pattern, file_config):
 
         return log_files
     except ValueError:
-        LOGGER.error('Getting nginx log file in {} is failed!'.format(log_path))
+        LOGGER.error('Getting nginx log files in {} is failed!'.format(log_path))
         return
 
 
