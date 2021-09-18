@@ -5,13 +5,13 @@ import argparse
 import gzip
 import json
 import logging
-import os
 import re
 import statistics
 import sys
 from configparser import RawConfigParser
 from logging import config
 from pathlib import Path
+from typing import Dict, Generator, List
 
 # log_format ui_short '$remote_addr  $remote_user $http_x_real_ip [$time_local] "$request" '
 #                     '$status $body_bytes_sent "$http_referer" '
@@ -37,7 +37,7 @@ ROW_PATTERN = re.compile(
 LOGGER = None
 
 
-def init_logger(config_path: 'Directory of config file'):
+def init_logger(config_path: str) -> None:
     """
     This function initiates logging parameters
     """
@@ -46,7 +46,7 @@ def init_logger(config_path: 'Directory of config file'):
     LOGGER = logging.getLogger('ParserWork')
 
 
-def parse_config_args():
+def parse_config_args() -> Dict:
     """
     This function creates config args for the script.
     :return: file_config(dict): A dictionary with config values.
@@ -57,11 +57,11 @@ def parse_config_args():
         args = parser.parse_args()
     except:
         sys.stdout.write('Configuration file is missed in params!')
-        return
+        return dict()
     config_path = args.config
     if not Path(config_path).exists():
         sys.stdout.write('Configuration file {} is not exists!'.format(config_path))
-        return
+        return dict()
     init_logger(config_path)
     config_parser = RawConfigParser()
     config_parser.read(config_path)
@@ -74,9 +74,9 @@ def parse_config_args():
     return file_config
 
 
-def parse_logs(log_path: 'Directory of log',
-               log_pattern: 'Pattern of template name',
-               file_config: 'Dict of config parameters'):
+def parse_logs(log_path: str,
+               log_pattern: str,
+               file_config: Dict):
     """
     This function function gets a list of the last LOGS_COUNT sorted log files
     by date in their name with the extension gz or plain and the template
@@ -94,7 +94,7 @@ def parse_logs(log_path: 'Directory of log',
         return []
 
 
-def parse_log(file: 'name of file'):
+def parse_log(file: str):
     """
     This function parsing nginx log file
     :return:
@@ -119,7 +119,7 @@ def parse_log(file: 'name of file'):
     return urls_list, sum_requests, sum_requests_time
 
 
-def read_log(file_name: 'Name of file with directory'):
+def read_log(file_name: str) -> Generator:
     """
     This generator function opening and read file
     :return: row: row of file
@@ -133,8 +133,8 @@ def read_log(file_name: 'Name of file with directory'):
     log.close()
 
 
-def calculate_url_statistics(urls_list: 'list of urls',
-                             log_line: 'dict of log row'):
+def calculate_url_statistics(urls_list: List[str],
+                             log_line: Dict):
     """
     This function calculating statistics for each unique url
     :return:
@@ -157,9 +157,9 @@ def calculate_url_statistics(urls_list: 'list of urls',
         urls_list[url]['time_sum'] = round(urls_list[url]['time_sum'] + rt, 3)
 
 
-def enrich_url_statistics(urls_list: 'list of urls',
-                          sum_req: 'sum of requests',
-                          sum_req_time: 'sum of requests time'):
+def enrich_url_statistics(urls_list: List[str],
+                          sum_req: float,
+                          sum_req_time: float):
     """
     This function enriching statistics for each unique url
     :return: urls_list(list): list of urls with statistics
@@ -177,7 +177,7 @@ def enrich_url_statistics(urls_list: 'list of urls',
     return urls_list
 
 
-def create_report(report: 'report body', report_path: 'report directory'):
+def create_report(report: List[str], report_path: Path):
     """
     This function create report
     :return:
@@ -198,7 +198,7 @@ def create_report(report: 'report body', report_path: 'report directory'):
         return
 
 
-def main(file_config: 'dict of configuration parameters'):
+def main(file_config: Dict):
     """
     This function processes logs
     :return:
