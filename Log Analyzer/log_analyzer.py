@@ -76,7 +76,7 @@ def parse_config_args() -> Dict:
 
 def parse_logs(log_path: str,
                log_pattern: str,
-               file_config: Dict):
+               file_config: Dict) -> List[Path]:
     """
     This function function gets a list of the last LOGS_COUNT sorted log files
     by date in their name with the extension gz or plain and the template
@@ -134,7 +134,7 @@ def read_log(file_name: str) -> Generator:
 
 
 def calculate_url_statistics(urls_list: List[str],
-                             log_line: Dict):
+                             log_line: Dict) -> None:
     """
     This function calculating statistics for each unique url
     :return:
@@ -159,7 +159,7 @@ def calculate_url_statistics(urls_list: List[str],
 
 def enrich_url_statistics(urls_list: List[str],
                           sum_req: float,
-                          sum_req_time: float):
+                          sum_req_time: float) -> List[float]:
     """
     This function enriching statistics for each unique url
     :return: urls_list(list): list of urls with statistics
@@ -177,7 +177,7 @@ def enrich_url_statistics(urls_list: List[str],
     return urls_list
 
 
-def create_report(report: List[str], report_path: Path):
+def create_report(report: List[str], report_path: Path) -> None:
     """
     This function create report
     :return:
@@ -198,7 +198,7 @@ def create_report(report: List[str], report_path: Path):
         return
 
 
-def main(file_config: Dict):
+def main(file_config: Dict) -> None:
     """
     This function processes logs
     :return:
