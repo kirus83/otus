@@ -11,7 +11,7 @@ import sys
 from configparser import RawConfigParser
 from logging import config
 from pathlib import Path
-from typing import Dict, Generator, List
+from typing import Dict, Generator, List, Tuple
 
 # log_format ui_short '$remote_addr  $remote_user $http_x_real_ip [$time_local] "$request" '
 #                     '$status $body_bytes_sent "$http_referer" '
@@ -94,7 +94,7 @@ def parse_logs(log_path: str,
         return []
 
 
-def parse_log(file: str):
+def parse_log(file: str) -> Tuple[List, float, float]:
     """
     This function parsing nginx log file
     :return:
