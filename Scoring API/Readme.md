@@ -7,7 +7,7 @@
 # Пример запроса
 `'{"account": "horns&hoofs", "login": "h&f", "method":
 "online_score", "token":
-"55cc9ce545bcd144300fe9efc28e65d415b923ebb6be1e19d2750a2c03e80dd209a27954dca045e5bb12418e7d89b6d718a9e35af34e14e1d5bcd
+"e6f5540b9c571683d644a7f22389fb354dded449c1e2ac0340ea1c01bfc8b962544063900d2f684f166e5e494c69a3d44a65334e187ac969996a1d501ecb7cf9",
 "arguments": {"phone": "79175002040", "email": "stupnikov@otus.ru", "first_name": "Стансилав", "last_name":
 "Ступников", "birthday": "01.01.1990", "gender": 1}}'`
 # Python 
@@ -18,7 +18,7 @@
 #### Linux
 <code>$ curl -X POST -H "Content-Type: application/json" -d '{"account": "horns&hoofs", "login": "h&f", "method":
 "online_score", "token":
-"55cc9ce545bcd144300fe9efc28e65d415b923ebb6be1e19d2750a2c03e80dd209a27954dca045e5bb12418e7d89b6d718a9e35af34e14e1d5bcd
+"e6f5540b9c571683d644a7f22389fb354dded449c1e2ac0340ea1c01bfc8b962544063900d2f684f166e5e494c69a3d44a65334e187ac969996a1d501ecb7cf9",
 "arguments": {"phone": "79175002040", "email": "stupnikov@otus.ru", "first_name": "Стансилав", "last_name":
 "Ступников", "birthday": "01.01.1990", "gender": 1}}' http://127.0.0.1:8080/method/
 </code>
