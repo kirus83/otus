@@ -56,37 +56,37 @@ class AbstractField(metaclass=ABCMeta):
 class CharField(AbstractField):
     def validatefield(self, value):
         if not isinstance(value, str):
-            raise ValueError('Field value must be a string')
+            raise ValueError("Field value must be a string")
         return value
 
 
 class ArgumentsField(AbstractField):
     def validatefield(self, value):
         if not isinstance(value, dict):
-            raise ValueError('Field value must be a dictionary')
+            raise ValueError("Field value must be a dictionary")
         return value
 
 
 class EmailField(AbstractField):
     def validatefield(self, value):
-        if not re.match(r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)', str(value)):
-            raise ValueError('Field value must be a correctly email')
+        if not re.match(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", str(value)):
+            raise ValueError("Field value must be a correctly email")
         return value
 
 
 class PhoneField(AbstractField):
     def validatefield(self, value):
-        if not re.match(r'(^7[\d]{10}$)', str(value)):
-            raise ValueError('Field value must be a correctly phone number')
+        if not re.match(r"(^7[\d]{10}$)", str(value)):
+            raise ValueError("Field value must be a correctly phone number")
         return value
 
 
 class DateField(AbstractField):
     def validatefield(self, value):
         try:
-            value = datetime.datetime.strptime(value, '%d.%m.%Y')
+            value = datetime.datetime.strptime(value, "%d.%m.%Y")
         except Exception:
-            raise ValueError('Field value must be a correctly date')
+            raise ValueError("Field value must be a correctly date")
         return value
 
 
@@ -95,23 +95,23 @@ class BirthDayField(DateField):
         birthdaylimit = 70
         value = super(BirthDayField, self).validatefield(value)
         if datetime.datetime.now().year - value.year > birthdaylimit:
-            raise ValueError('Field value must be no more then 70 y.o.')
+            raise ValueError("Field value must be no more then 70 y.o.")
         return value
 
 
 class GenderField(AbstractField):
     def validatefield(self, value):
         if value not in GENDERS.values():
-            raise ValueError('Field value must be correctly gender')
+            raise ValueError("Field value must be correctly gender")
         return value
 
 
 class ClientIDsField(AbstractField):
     def validatefield(self, value):
         if not isinstance(value, list):
-            raise ValueError('Field value must be list of client ids')
+            raise ValueError("Field value must be list of client ids")
         if not all(isinstance(item, int) for item in value):
-            raise ValueError('List value of client ids must be integer')
+            raise ValueError("List value of client ids must be integer")
         return value
 
 
@@ -136,18 +136,18 @@ class Request(metaclass=RequestAttributes):
 
     @staticmethod
     def format_error_string(field, message):
-        return '{}: {}'.format(field.name, message)
+        return "{}: {}".format(field.name, message)
 
     def check_fields(self):
         for field in self.fields:
             value = None
             if field.name not in self.request or self.request[field.name] in self.empty_values_tuple:
                 if field.required:
-                    self._errors.append(self.format_error_string(field, 'Field is required.'))
+                    self._errors.append(self.format_error_string(field, "Field is required."))
             else:
                 value = self.request[field.name]
             if value in self.empty_values_tuple and not field.nullable:
-                self._errors.append(self.format_error_string(field, 'Field not be nullable.'))
+                self._errors.append(self.format_error_string(field, "Field not be nullable."))
             try:
                 if value not in self.empty_values_tuple:
                     value = field.validatefield(value)
@@ -169,7 +169,7 @@ class Request(metaclass=RequestAttributes):
         return self._has_errors
 
     def error_msg(self):
-        return ', '.join(self._errors)
+        return ", ".join(self._errors)
 
 
 class ClientsInterestsRequest(Request):
@@ -179,9 +179,9 @@ class ClientsInterestsRequest(Request):
 
 class OnlineScoreRequest(Request):
     _couples = (
-        ('phone', 'email'),
-        ('first_name', 'last_name'),
-        ('gender', 'birthday'),
+        ("phone", "email"),
+        ("first_name", "last_name"),
+        ("gender", "birthday"),
     )
 
     first_name = CharField(required=False, nullable=True)
@@ -197,7 +197,7 @@ class OnlineScoreRequest(Request):
         result = any([fields_with_value.issuperset(couple) for couple in self._couples])
         if not result:
             self._errors.append(
-                'Couples {} should be not empty'.format(' or '.join(str(couple) for couple in self._couples)))
+                "Couples {} should be not empty".format(" or ".join(str(couple) for couple in self._couples)))
         return self._errors
 
 
@@ -243,13 +243,13 @@ class OnlineScoreRequestHandler(AbstractRequestHandler):
         return OnlineScoreRequest(field_data)
 
     def processing_handler(self, request_type):
-        self.ctx['has'] = request_type.get_fields_with_value()
+        self.ctx["has"] = request_type.get_fields_with_value()
         if self.request.is_admin:
-            return {'score': 42}, OK
-        return {'score': scoring.get_score(None, self.request.arguments.get('phone'),
-                                           self.request.arguments.get('email'), self.request.request.get('birthday'),
-                                           self.request.request.get('gender'), self.request.request.get('first_name'),
-                                           self.request.request.get('last_name'))}, OK
+            return {"score": 42}, OK
+        return {"score": scoring.get_score(None, self.request.arguments.get("phone"),
+                                           self.request.arguments.get("email"), self.request.request.get("birthday"),
+                                           self.request.request.get("gender"), self.request.request.get("first_name"),
+                                           self.request.request.get("last_name"))}, OK
 
 
 class ClientsInterestsRequestHandler(AbstractRequestHandler):
@@ -258,17 +258,17 @@ class ClientsInterestsRequestHandler(AbstractRequestHandler):
 
     def processing_handler(self, request_type):
         response = {i: scoring.get_interests(None, None) for i in request_type.client_ids}
-        self.ctx['nclients'] = len(request_type.client_ids)
+        self.ctx["nclients"] = len(request_type.client_ids)
         return response, OK
 
 
 def check_auth(request):
     if request.is_admin:
         digest = hashlib.sha512(
-            datetime.datetime.now().strftime('%Y%m%d%H').encode('utf-8') + ADMIN_SALT.encode('utf-8')).hexdigest()
+            datetime.datetime.now().strftime("%Y%m%d%H").encode("utf-8") + ADMIN_SALT.encode("utf-8")).hexdigest()
     else:
         digest = hashlib.sha512(
-            request.account.encode('utf-8') + request.login.encode('utf-8') + SALT.encode('utf-8')).hexdigest()
+            request.account.encode("utf-8") + request.login.encode("utf-8") + SALT.encode("utf-8")).hexdigest()
     if digest == request.token:
         return True
     return False
@@ -276,10 +276,10 @@ def check_auth(request):
 
 def method_handler(request, ctx):
     handlers = {
-        'online_score': OnlineScoreRequestHandler,
-        'clients_interests': ClientsInterestsRequestHandler
+        "online_score": OnlineScoreRequestHandler,
+        "clients_interests": ClientsInterestsRequestHandler
     }
-    request = MethodRequest(request['body'])
+    request = MethodRequest(request["body"])
     if not request.is_valid():
         return request.error_msg(), INVALID_REQUEST
     if request.method not in handlers:
@@ -287,7 +287,7 @@ def method_handler(request, ctx):
     if not check_auth(request):
         return None, FORBIDDEN
     if not isinstance(request.arguments, dict):
-        return 'Arguments must be a dictionary', INVALID_REQUEST
+        return "Arguments must be a dictionary", INVALID_REQUEST
 
     return handlers[request.method](request, ctx).start_processing(request.arguments)
 
@@ -298,14 +298,14 @@ class MainHTTPHandler(BaseHTTPRequestHandler):
     }
 
     def get_request_id(self, headers):
-        return headers.get('HTTP_X_REQUEST_ID', uuid.uuid4().hex)
+        return headers.get("HTTP_X_REQUEST_ID", uuid.uuid4().hex)
 
     def do_POST(self):
         response, code = {}, OK
         context = {"request_id": self.get_request_id(self.headers)}
         request = None
         try:
-            data_string = self.rfile.read(int(self.headers['Content-Length']))
+            data_string = self.rfile.read(int(self.headers["Content-Length"]))
             request = json.loads(data_string)
         except:
             code = BAD_REQUEST
@@ -331,7 +331,7 @@ class MainHTTPHandler(BaseHTTPRequestHandler):
             r = {"error": response or ERRORS.get(code, "Unknown Error"), "code": code}
         context.update(r)
         logging.info(context)
-        self.wfile.write(json.dumps(r).encode('utf-8'))
+        self.wfile.write(json.dumps(r).encode("utf-8"))
         return
 
 
@@ -341,7 +341,7 @@ if __name__ == "__main__":
     op.add_option("-l", "--log", action="store", default=None)
     (opts, args) = op.parse_args()
     logging.basicConfig(filename=opts.log, level=logging.INFO,
-                        format='[%(asctime)s] %(levelname).1s %(message)s', datefmt='%Y.%m.%d %H:%M:%S')
+                        format="[%(asctime)s] %(levelname).1s %(message)s", datefmt="%Y.%m.%d %H:%M:%S")
     server = HTTPServer(("localhost", opts.port), MainHTTPHandler)
     logging.info("Starting server at %s" % opts.port)
     try:
