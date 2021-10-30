@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+from fields import Fields
 import hashlib
 import json
 import logging
-import random
-import re
 import scoring
 import uuid
 from abc import ABCMeta, abstractmethod
@@ -40,88 +39,13 @@ GENDERS = {
 }
 
 
-class AbstractField(metaclass=ABCMeta):
-
-    def __init__(self, required=False, nullable=False):
-        self.required = required
-        self.nullable = nullable
-
-    @abstractmethod
-    def validatefield(self, value):
-        """
-        Return result of parsed value or raise exception with ValueError
-        """
-
-
-class CharField(AbstractField):
-    def validatefield(self, value):
-        if not isinstance(value, str):
-            raise ValueError("Field value must be a string")
-        return value
-
-
-class ArgumentsField(AbstractField):
-    def validatefield(self, value):
-        if not isinstance(value, dict):
-            raise ValueError("Field value must be a dictionary")
-        return value
-
-
-class EmailField(AbstractField):
-    def validatefield(self, value):
-        if not re.match(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", str(value)):
-            raise ValueError("Field value must be a correctly email")
-        return value
-
-
-class PhoneField(AbstractField):
-    def validatefield(self, value):
-        if not re.match(r"(^7[\d]{10}$)", str(value)):
-            raise ValueError("Field value must be a correctly phone number")
-        return value
-
-
-class DateField(AbstractField):
-    def validatefield(self, value):
-        try:
-            value = datetime.datetime.strptime(value, "%d.%m.%Y")
-        except Exception:
-            raise ValueError("Field value must be a correctly date")
-        return value
-
-
-class BirthDayField(DateField):
-    def validatefield(self, value):
-        birthdaylimit = 70
-        value = super(BirthDayField, self).validatefield(value)
-        if datetime.datetime.now().year - value.year > birthdaylimit:
-            raise ValueError("Field value must be no more then 70 y.o.")
-        return value
-
-
-class GenderField(AbstractField):
-    def validatefield(self, value):
-        if value not in GENDERS.values():
-            raise ValueError("Field value must be correctly gender")
-        return value
-
-
-class ClientIDsField(AbstractField):
-    def validatefield(self, value):
-        if not isinstance(value, list):
-            raise ValueError("Field value must be list of client ids")
-        if not all(isinstance(item, int) for item in value):
-            raise ValueError("List value of client ids must be integer")
-        return value
-
-
 class RequestAttributes(type):
 
     def __init__(cls, name, bases, dct):
         super(RequestAttributes, cls).__init__(name, bases, dct)
         cls.fields = []
         for key, attribute in dct.items():
-            if isinstance(attribute, AbstractField):
+            if isinstance(attribute, Fields.AbstractField):
                 attribute.name = key
                 cls.fields.append(attribute)
 
@@ -150,7 +74,7 @@ class Request(metaclass=RequestAttributes):
                 self._errors.append(self.format_error_string(field, "Field not be nullable."))
             try:
                 if value not in self.empty_values_tuple:
-                    value = field.validatefield(value)
+                    value = field.validate_field(value)
                     setattr(self, field.name, value)
             except ValueError as e:
                 self._errors.append(self.format_error_string(field, e))
@@ -173,8 +97,8 @@ class Request(metaclass=RequestAttributes):
 
 
 class ClientsInterestsRequest(Request):
-    client_ids = ClientIDsField(required=True)
-    date = DateField(required=False, nullable=True)
+    client_ids = Fields.ClientIDsField(required=True)
+    date = Fields.DateField(required=False, nullable=True)
 
 
 class OnlineScoreRequest(Request):
@@ -184,12 +108,12 @@ class OnlineScoreRequest(Request):
         ("gender", "birthday"),
     )
 
-    first_name = CharField(required=False, nullable=True)
-    last_name = CharField(required=False, nullable=True)
-    email = EmailField(required=False, nullable=True)
-    phone = PhoneField(required=False, nullable=True)
-    birthday = BirthDayField(required=False, nullable=True)
-    gender = GenderField(required=False, nullable=True)
+    first_name = Fields.CharField(required=False, nullable=True)
+    last_name = Fields.CharField(required=False, nullable=True)
+    email = Fields.EmailField(required=False, nullable=True)
+    phone = Fields.PhoneField(required=False, nullable=True)
+    birthday = Fields.BirthDayField(required=False, nullable=True)
+    gender = Fields.GenderField(required=False, nullable=True)
 
     def check_fields(self):
         self._errors = super(OnlineScoreRequest, self).check_fields()
@@ -202,11 +126,11 @@ class OnlineScoreRequest(Request):
 
 
 class MethodRequest(Request):
-    account = CharField(required=False, nullable=True)
-    login = CharField(required=True, nullable=True)
-    token = CharField(required=True, nullable=True)
-    arguments = ArgumentsField(required=True, nullable=True)
-    method = CharField(required=True, nullable=False)
+    account = Fields.CharField(required=False, nullable=True)
+    login = Fields.CharField(required=True, nullable=True)
+    token = Fields.CharField(required=True, nullable=True)
+    arguments = Fields.ArgumentsField(required=True, nullable=True)
+    method = Fields.CharField(required=True, nullable=False)
 
     @property
     def is_admin(self):
